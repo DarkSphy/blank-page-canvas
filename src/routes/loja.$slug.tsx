@@ -504,6 +504,11 @@ function ProductDetailModal({ product, primary, accent, cart, onAdd, onClose }: 
             style={{ backgroundColor: accent }}>
             <Plus className="h-4 w-4" /> {inCart ? `No carrinho (${inCart.qty}) — adicionar mais` : "Adicionar ao carrinho"}
           </button>
+          
+          <button onClick={onClose}
+            className="mt-3 w-full inline-flex h-12 items-center justify-center gap-2 rounded-full font-semibold text-sm border-2 border-border bg-background text-muted-foreground hover:bg-muted transition">
+            <X className="h-4 w-4" /> Fechar produto
+          </button>
         </div>
       </div>
     </div>
