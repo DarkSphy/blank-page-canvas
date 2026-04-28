@@ -41,6 +41,7 @@ type Product = {
   promo_price: number | null;
   old_price: number | null;
   image_url: string | null;
+  images: string[] | null;
   available: boolean;
   category_id: string | null;
   sort_order: number;
@@ -49,6 +50,8 @@ type Product = {
   pet_size: string | null;
   is_featured: boolean;
 };
+
+const MAX_PRODUCT_IMAGES = 5;
 
 type Banner = {
   id: string;
@@ -562,23 +565,66 @@ function ProductForm({
   const [typePet, setTypePet] = useState(product?.type_pet ?? "");
   const [petStage, setPetStage] = useState(product?.pet_stage ?? "");
   const [petSize, setPetSize] = useState(product?.pet_size ?? "");
-  const [imageUrl, setImageUrl] = useState(product?.image_url ?? null);
+  const [images, setImages] = useState<string[]>(
+    product?.images && product.images.length > 0
+      ? product.images
+      : product?.image_url ? [product.image_url] : []
+  );
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (file: File) => {
+  const handleUpload = async (files: FileList) => {
+    const remaining = MAX_PRODUCT_IMAGES - images.length;
+    if (remaining <= 0) {
+      toast.error(`Limite de ${MAX_PRODUCT_IMAGES} imagens atingido`);
+      return;
+    }
+    const toUpload = Array.from(files).slice(0, remaining);
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `${userId}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("product-images").upload(path, file, { cacheControl: "3600" });
-      if (error) throw error;
-      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-      setImageUrl(data.publicUrl);
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        const ext = file.name.split(".").pop();
+        const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const { error } = await supabase.storage.from("product-images").upload(path, file, { cacheControl: "3600" });
+        if (error) throw error;
+        const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+        uploaded.push(data.publicUrl);
+      }
+      setImages((prev) => [...prev, ...uploaded]);
+      if (toUpload.length < files.length) {
+        toast.warning(`Apenas ${toUpload.length} imagem(ns) adicionada(s). Limite de ${MAX_PRODUCT_IMAGES}.`);
+      }
     } catch (e: any) {
       toast.error(e.message || "Erro no upload");
-    } finally { setUploading(false); }
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const moveImage = (idx: number, dir: -1 | 1) => {
+    setImages((prev) => {
+      const next = [...prev];
+      const target = idx + dir;
+      if (target < 0 || target >= next.length) return prev;
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  };
+
+  const setAsMain = (idx: number) => {
+    if (idx === 0) return;
+    setImages((prev) => {
+      const next = [...prev];
+      const [picked] = next.splice(idx, 1);
+      return [picked, ...next];
+    });
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -592,7 +638,9 @@ function ProductForm({
       category_id: categoryId || null,
       available, is_featured: isFeatured,
       type_pet: typePet || null, pet_stage: petStage || null, pet_size: petSize || null,
-      image_url: imageUrl, store_id: userId,
+      image_url: images[0] ?? null,
+      images,
+      store_id: userId,
     };
     const { error } = product
       ? await supabase.from("products").update(payload).eq("id", product.id)
@@ -612,20 +660,57 @@ function ProductForm({
         </div>
         <form onSubmit={submit} className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Foto do produto</label>
-            <div className="flex items-center gap-4">
-              <div className="h-24 w-24 rounded-2xl border border-border bg-secondary overflow-hidden flex items-center justify-center shrink-0">
-                {imageUrl ? <img src={imageUrl} alt="" className="h-full w-full object-cover" /> : <ImageIcon className="h-7 w-7 text-muted-foreground" />}
-              </div>
-              <div>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
-                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-                  className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold hover:bg-muted disabled:opacity-60">
-                  <Upload className="h-4 w-4" /> {uploading ? "Enviando..." : "Enviar foto"}
-                </button>
-              </div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium">Fotos do produto</label>
+              <span className="text-xs text-muted-foreground">{images.length}/{MAX_PRODUCT_IMAGES}</span>
             </div>
+
+            {images.length > 0 && (
+              <div className="grid grid-cols-5 gap-2 mb-3">
+                {images.map((url, idx) => (
+                  <div key={url + idx} className="relative group">
+                    <div className={`aspect-square rounded-xl overflow-hidden bg-white border-2 ${idx === 0 ? "border-accent" : "border-border"}`}>
+                      <img src={url} alt="" className="w-full h-full object-contain" />
+                    </div>
+                    {idx === 0 && (
+                      <span className="absolute top-1 left-1 rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-bold text-accent-foreground">
+                        Principal
+                      </span>
+                    )}
+                    <button type="button" onClick={() => removeImage(idx)}
+                      className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-destructive text-white inline-flex items-center justify-center shadow hover:scale-110 transition">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                    <div className="mt-1 flex items-center justify-between gap-1">
+                      <button type="button" onClick={() => moveImage(idx, -1)} disabled={idx === 0}
+                        className="h-6 w-6 inline-flex items-center justify-center rounded-md border border-border bg-background text-xs disabled:opacity-30 hover:bg-muted" title="Mover para esquerda">
+                        ←
+                      </button>
+                      {idx !== 0 ? (
+                        <button type="button" onClick={() => setAsMain(idx)}
+                          className="text-[10px] font-semibold text-accent hover:underline truncate" title="Definir como principal">
+                          Principal
+                        </button>
+                      ) : <span className="text-[10px] text-muted-foreground">★</span>}
+                      <button type="button" onClick={() => moveImage(idx, 1)} disabled={idx === images.length - 1}
+                        className="h-6 w-6 inline-flex items-center justify-center rounded-md border border-border bg-background text-xs disabled:opacity-30 hover:bg-muted" title="Mover para direita">
+                        →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
+              onChange={(e) => e.target.files && e.target.files.length > 0 && handleUpload(e.target.files)} />
+            <button type="button" onClick={() => fileRef.current?.click()}
+              disabled={uploading || images.length >= MAX_PRODUCT_IMAGES}
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-dashed border-border bg-card px-4 text-sm font-semibold hover:bg-muted disabled:opacity-60">
+              <Upload className="h-4 w-4" />
+              {uploading ? "Enviando..." : images.length === 0 ? "Adicionar fotos" : `Adicionar mais (${MAX_PRODUCT_IMAGES - images.length} restantes)`}
+            </button>
+            <p className="mt-1 text-[11px] text-muted-foreground">A primeira imagem será exibida como principal. Use as setas para reordenar.</p>
           </div>
 
           <div>

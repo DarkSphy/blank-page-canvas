@@ -37,6 +37,7 @@ type Product = {
   promo_price: number | null;
   old_price: number | null;
   image_url: string | null;
+  images: string[] | null;
   available: boolean;
   category_id: string | null;
   type_pet: string | null;
@@ -48,6 +49,12 @@ type Product = {
 type Category = { id: string; name: string; icon: string | null };
 type Banner = { id: string; image_url: string; position: string; sort_order: number };
 type CartItem = { product: Product; qty: number };
+
+function getProductImages(p: Product): string[] {
+  if (p.images && p.images.length > 0) return p.images;
+  if (p.image_url) return [p.image_url];
+  return [];
+}
 
 const CUSTOMER_STORAGE_KEY = "catalogopet_customer";
 
@@ -66,6 +73,7 @@ function StorePage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [notFoundError, setNotFoundError] = useState(false);
 
   useEffect(() => {
@@ -78,7 +86,7 @@ function StorePage() {
       setStore(s as Store);
       const [{ data: prods }, { data: cats }, { data: bs }] = await Promise.all([
         supabase.from("products")
-          .select("id, name, description, price, promo_price, old_price, image_url, available, category_id, type_pet, pet_stage, pet_size, is_featured")
+          .select("id, name, description, price, promo_price, old_price, image_url, images, available, category_id, type_pet, pet_stage, pet_size, is_featured")
           .eq("store_id", s.id).eq("available", true).order("created_at", { ascending: false }),
         supabase.from("categories").select("id, name, icon").eq("store_id", s.id).order("sort_order"),
         supabase.from("banners").select("*").eq("store_id", s.id).order("sort_order"),
@@ -217,7 +225,7 @@ function StorePage() {
           </h2>
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {featured.map((p) => (
-              <ProductCard key={`f-${p.id}`} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} />
+              <ProductCard key={`f-${p.id}`} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
             ))}
           </div>
         </section>
@@ -234,7 +242,7 @@ function StorePage() {
           <>
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
               {filtered.slice(0, Math.ceil(filtered.length / 2)).map((p) => (
-                <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} />
+                <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
               ))}
             </div>
 
@@ -250,7 +258,7 @@ function StorePage() {
             {filtered.length > 1 && (
               <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 mt-4">
                 {filtered.slice(Math.ceil(filtered.length / 2)).map((p) => (
-                  <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} />
+                  <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
                 ))}
               </div>
             )}
@@ -347,28 +355,42 @@ function StorePage() {
           onSent={() => { setCheckoutOpen(false); setCart([]); }}
         />
       )}
+
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          primary={primary}
+          accent={accent}
+          cart={cart}
+          onAdd={addToCart}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 }
 
 /* ===== Componentes auxiliares ===== */
 
-function ProductCard({ p, primary, accent, cart, onAdd }: {
-  p: Product; primary: string; accent: string; cart: CartItem[]; onAdd: (p: Product) => void;
+function ProductCard({ p, primary, accent, cart, onAdd, onOpen }: {
+  p: Product; primary: string; accent: string; cart: CartItem[];
+  onAdd: (p: Product) => void; onOpen: (p: Product) => void;
 }) {
   const finalPrice = p.promo_price ?? p.price;
   const oldPrice = p.promo_price ? p.price : p.old_price;
   const inCart = cart.find((i) => i.product.id === p.id);
+  const mainImage = getProductImages(p)[0];
   return (
     <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm flex flex-col">
-      <div className="aspect-square bg-secondary overflow-hidden relative">
-        {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-          : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-10 w-10 text-muted-foreground" /></div>}
+      <button type="button" onClick={() => onOpen(p)}
+        className="aspect-square bg-white overflow-hidden relative cursor-zoom-in group">
+        {mainImage ? <img src={mainImage} alt={p.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
+          : <div className="w-full h-full flex items-center justify-center bg-secondary"><ImageIcon className="h-10 w-10 text-muted-foreground" /></div>}
         {p.promo_price && <span className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: accent }}>OFERTA</span>}
         {p.is_featured && <span className="absolute top-2 right-2 rounded-full p-1 text-white" style={{ backgroundColor: accent }}><Star className="h-3 w-3" fill="white" /></span>}
-      </div>
+      </button>
       <div className="p-3 flex flex-col flex-1">
-        <p className="font-semibold text-sm line-clamp-2 text-foreground">{p.name}</p>
+        <p className="font-semibold text-sm line-clamp-2 text-foreground cursor-pointer" onClick={() => onOpen(p)}>{p.name}</p>
         {p.description && <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
         <div className="mt-2 flex items-baseline gap-2 flex-wrap">
           <span className="font-display font-bold text-base" style={{ color: primary }}>R$ {finalPrice.toFixed(2)}</span>
@@ -379,6 +401,105 @@ function ProductCard({ p, primary, accent, cart, onAdd }: {
           style={{ backgroundColor: accent }}>
           <Plus className="h-3.5 w-3.5" />{inCart ? `No carrinho (${inCart.qty})` : "Adicionar"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function ProductDetailModal({ product, primary, accent, cart, onAdd, onClose }: {
+  product: Product; primary: string; accent: string; cart: CartItem[];
+  onAdd: (p: Product) => void; onClose: () => void;
+}) {
+  const images = getProductImages(product);
+  const [idx, setIdx] = useState(0);
+  const finalPrice = product.promo_price ?? product.price;
+  const oldPrice = product.promo_price ? product.price : product.old_price;
+  const inCart = cart.find((i) => i.product.id === product.id);
+
+  const next = () => setIdx((i) => (images.length === 0 ? 0 : (i + 1) % images.length));
+  const prev = () => setIdx((i) => (images.length === 0 ? 0 : (i - 1 + images.length) % images.length));
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") next();
+      else if (e.key === "ArrowLeft") prev();
+      else if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images.length]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl rounded-3xl bg-card shadow-2xl my-8 overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="font-display text-lg font-bold line-clamp-1">{product.name}</h3>
+          <button onClick={onClose} className="h-9 w-9 inline-flex items-center justify-center rounded-full hover:bg-muted shrink-0">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-5">
+          {/* Imagem principal */}
+          <div className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-border">
+            {images.length > 0 ? (
+              <img src={images[idx]} alt={product.name} className="w-full h-full object-contain" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-secondary">
+                <ImageIcon className="h-16 w-16 text-muted-foreground" />
+              </div>
+            )}
+            {product.promo_price && <span className="absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold text-white" style={{ backgroundColor: accent }}>OFERTA</span>}
+
+            {images.length > 1 && (
+              <>
+                <button onClick={prev} aria-label="Imagem anterior"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 hover:bg-white inline-flex items-center justify-center shadow-md transition">
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button onClick={next} aria-label="Próxima imagem"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 hover:bg-white inline-flex items-center justify-center shadow-md transition">
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/50 text-white text-[11px] px-2.5 py-1 font-semibold">
+                  {idx + 1} / {images.length}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Miniaturas */}
+          {images.length > 1 && (
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              {images.map((url, i) => (
+                <button key={url + i} onClick={() => setIdx(i)}
+                  className={`shrink-0 h-16 w-16 rounded-xl overflow-hidden bg-white border-2 transition ${i === idx ? "border-accent" : "border-border opacity-70 hover:opacity-100"}`}
+                  style={i === idx ? { borderColor: primary } : undefined}>
+                  <img src={url} alt="" className="w-full h-full object-contain" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Info */}
+          <div className="mt-5">
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className="font-display font-bold text-2xl" style={{ color: primary }}>R$ {finalPrice.toFixed(2)}</span>
+              {oldPrice && <span className="text-sm line-through text-muted-foreground">R$ {oldPrice.toFixed(2)}</span>}
+            </div>
+            {product.description && (
+              <p className="mt-3 text-sm text-foreground/80 whitespace-pre-line">{product.description}</p>
+            )}
+          </div>
+
+          <button onClick={() => { onAdd(product); }}
+            className="mt-6 w-full inline-flex h-12 items-center justify-center gap-2 rounded-full font-semibold text-sm text-white shadow-md hover:brightness-110 transition"
+            style={{ backgroundColor: accent }}>
+            <Plus className="h-4 w-4" /> {inCart ? `No carrinho (${inCart.qty}) — adicionar mais` : "Adicionar ao carrinho"}
+          </button>
+        </div>
       </div>
     </div>
   );
