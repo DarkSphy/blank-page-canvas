@@ -41,6 +41,7 @@ type Product = {
   promo_price: number | null;
   old_price: number | null;
   image_url: string | null;
+  images: string[] | null;
   available: boolean;
   category_id: string | null;
   sort_order: number;
@@ -49,6 +50,8 @@ type Product = {
   pet_size: string | null;
   is_featured: boolean;
 };
+
+const MAX_PRODUCT_IMAGES = 5;
 
 type Banner = {
   id: string;
