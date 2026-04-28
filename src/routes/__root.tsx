@@ -1,4 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { AuthProvider } from "@/hooks/useAuth";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 
@@ -29,19 +31,26 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Catálogo Pet — Catálogo digital para sua casa de ração" },
+      { name: "description", content: "Crie um catálogo digital com sua marca e receba pedidos de ração, petiscos e acessórios direto no WhatsApp." },
+      { name: "author", content: "Catálogo Pet" },
+      { property: "og:title", content: "Catálogo Pet — Catálogo digital para sua casa de ração" },
+      { property: "og:description", content: "Crie um catálogo digital com sua marca e receba pedidos de ração, petiscos e acessórios direto no WhatsApp." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Catálogo Pet — Catálogo digital para sua casa de ração" },
+      { name: "twitter:description", content: "Crie um catálogo digital com sua marca e receba pedidos de ração, petiscos e acessórios direto no WhatsApp." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/BrplPe0dfzSoOnd9Oh7mjVUzmH13/social-images/social-1777379398180-ChatGPT_Image_28_de_abr._de_2026,_09_29_48.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/BrplPe0dfzSoOnd9Oh7mjVUzmH13/social-images/social-1777379398180-ChatGPT_Image_28_de_abr._de_2026,_09_29_48.webp" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap",
       },
     ],
   }),
@@ -65,5 +74,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <Outlet />
+      <Toaster richColors position="top-center" />
+    </AuthProvider>
+  );
 }
