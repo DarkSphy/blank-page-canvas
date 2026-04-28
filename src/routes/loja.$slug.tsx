@@ -37,6 +37,7 @@ type Product = {
   promo_price: number | null;
   old_price: number | null;
   image_url: string | null;
+  images: string[] | null;
   available: boolean;
   category_id: string | null;
   type_pet: string | null;
@@ -48,6 +49,12 @@ type Product = {
 type Category = { id: string; name: string; icon: string | null };
 type Banner = { id: string; image_url: string; position: string; sort_order: number };
 type CartItem = { product: Product; qty: number };
+
+function getProductImages(p: Product): string[] {
+  if (p.images && p.images.length > 0) return p.images;
+  if (p.image_url) return [p.image_url];
+  return [];
+}
 
 const CUSTOMER_STORAGE_KEY = "catalogopet_customer";
 
