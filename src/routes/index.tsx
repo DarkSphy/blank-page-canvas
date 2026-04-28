@@ -19,6 +19,7 @@ import {
   ListChecks,
   Gift,
   Brain,
+  Star,
 } from "lucide-react";
 import logo from "@/assets/logo-catalogopet.png";
 import flyer from "@/assets/catalog-flyer.png";
@@ -52,6 +53,7 @@ function Index() {
         <WhatYouGet />
         <Differentiator />
         <Pricing />
+        <Testimonials />
         <FAQ />
       </main>
       <Footer />
@@ -474,6 +476,9 @@ function Pricing() {
 
           {/* Plano Completo (Setup) */}
           <div className="relative flex flex-col overflow-hidden rounded-3xl border-2 border-accent/40 bg-card p-8 shadow-[var(--shadow-glow)]">
+            <div className="absolute top-0 right-0 rounded-bl-2xl bg-accent px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-accent-foreground shadow-sm">
+              Mais escolhido
+            </div>
             <div
               className="absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-30 blur-3xl"
               style={{ background: "var(--gradient-accent)" }}
@@ -583,6 +588,65 @@ function FAQ() {
               </div>
             );
           })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Testimonials() {
+  const reviews = [
+    {
+      name: "João Silva",
+      store: "Agro Pet Central",
+      text: "Excelente! Resolveu a bagunça que era meu WhatsApp, agora mando um link e recebo o pedido prontinho.",
+      stars: 5,
+    },
+    {
+      name: "Mariana Costa",
+      store: "Ração & Cia",
+      text: "Peguei o plano com setup e foi a melhor escolha. Entregaram minha loja linda, com a minha logo e cores. No mesmo dia já fiz a primeira venda pelo catálogo!",
+      stars: 5,
+    },
+    {
+      name: "Carlos Ferreira",
+      store: "Cantinho do Pet",
+      text: "Meus clientes amaram a facilidade de escolher os produtos direto pelo link. Sem contar que não pago taxa por pedido, compensa demais.",
+      stars: 5,
+    },
+  ];
+
+  return (
+    <section className="py-20">
+      <div className="mx-auto max-w-6xl px-4">
+        <div className="mx-auto mb-12 max-w-2xl text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-accent">
+            <Star className="h-3.5 w-3.5" fill="currentColor" /> Quem usa, recomenda
+          </span>
+          <h2 className="mt-4 font-display text-3xl font-bold text-primary md:text-4xl">
+            O que os lojistas dizem
+          </h2>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          {reviews.map((r, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-6 flex flex-col shadow-[var(--shadow-soft)]">
+              <div className="flex items-center gap-1 text-accent mb-4">
+                {[...Array(r.stars)].map((_, j) => (
+                  <Star key={j} className="h-4 w-4" fill="currentColor" />
+                ))}
+              </div>
+              <p className="text-sm text-foreground/90 italic mb-6">"{r.text}"</p>
+              <div className="flex items-center gap-3 mt-auto">
+                <div className="h-10 w-10 flex items-center justify-center rounded-full bg-secondary text-primary font-bold">
+                  {r.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-primary">{r.name}</p>
+                  <p className="text-[11px] text-muted-foreground">{r.store}</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
