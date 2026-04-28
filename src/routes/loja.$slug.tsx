@@ -73,6 +73,7 @@ function StorePage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [notFoundError, setNotFoundError] = useState(false);
 
   useEffect(() => {
