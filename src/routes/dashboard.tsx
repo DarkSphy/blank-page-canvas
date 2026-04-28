@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import {
   LogOut, Store, Package, Tag, Copy, ExternalLink, Upload, Plus, Trash2,
   Pencil, X, Image as ImageIcon, Users, Layout, MessageCircle, Star,
+  BarChart3, Calendar, TrendingUp, PieChart as PieChartIcon,
 } from "lucide-react";
 import logo from "@/assets/logo-catalogopet.png";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -80,12 +82,12 @@ type Order = {
   created_at: string;
 };
 
-type TabKey = "loja" | "categorias" | "produtos" | "banners" | "clientes";
+type TabKey = "visao_geral" | "loja" | "categorias" | "produtos" | "banners" | "clientes";
 
 function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<TabKey>("loja");
+  const [tab, setTab] = useState<TabKey>("visao_geral");
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
@@ -137,6 +139,7 @@ function Dashboard() {
         </div>
 
         <div className="mb-6 flex gap-2 rounded-2xl bg-secondary p-1 overflow-x-auto">
+          <TabBtn active={tab === "visao_geral"} onClick={() => setTab("visao_geral")} icon={BarChart3} label="Visão Geral" />
           <TabBtn active={tab === "loja"} onClick={() => setTab("loja")} icon={Store} label="Loja" />
           <TabBtn active={tab === "categorias"} onClick={() => setTab("categorias")} icon={Tag} label="Categorias" />
           <TabBtn active={tab === "produtos"} onClick={() => setTab("produtos")} icon={Package} label="Produtos" />
@@ -144,6 +147,7 @@ function Dashboard() {
           <TabBtn active={tab === "clientes"} onClick={() => setTab("clientes")} icon={Users} label="Clientes" />
         </div>
 
+        {tab === "visao_geral" && profile && <OverviewTab userId={user.id} profile={profile} />}
         {tab === "loja" && profile && <StoreTab profile={profile} onUpdate={setProfile} />}
         {tab === "categorias" && <CategoriesTab userId={user.id} />}
         {tab === "produtos" && <ProductsTab userId={user.id} />}
@@ -164,6 +168,197 @@ function TabBtn({ active, onClick, icon: Icon, label }: any) {
     >
       <Icon className="h-4 w-4" /> {label}
     </button>
+  );
+}
+
+/* ==================== OVERVIEW TAB ==================== */
+function OverviewTab({ userId, profile }: { userId: string, profile: Profile }) {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState(30);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() - days);
+      const minDateStr = minDate.toISOString();
+
+      const [{ data: os }, { data: cs }, { data: cats }, { data: prods }] = await Promise.all([
+        supabase.from("orders").select("*").eq("store_id", userId).gte("created_at", minDateStr).order("created_at", { ascending: true }),
+        supabase.from("customers").select("*").eq("store_id", userId).gte("created_at", minDateStr),
+        supabase.from("categories").select("*").eq("store_id", userId),
+        supabase.from("products").select("id, category_id").eq("store_id", userId),
+      ]);
+      setOrders((os ?? []) as Order[]);
+      setCustomers((cs ?? []) as Customer[]);
+      setCategories((cats ?? []) as Category[]);
+      setProducts((prods ?? []) as Product[]);
+      setLoading(false);
+    })();
+  }, [userId, days]);
+
+  const stats = useMemo(() => {
+    let totalRevenue = 0;
+    let totalOrders = orders.length;
+    let newCustomers = customers.length;
+    
+    // Group orders by date
+    const ordersByDate: Record<string, number> = {};
+    const revenueByDate: Record<string, number> = {};
+    
+    // Maps
+    const catMap = Object.fromEntries(categories.map(c => [c.id, c.name]));
+    const prodToCat = Object.fromEntries(products.map(p => [p.id, p.category_id]));
+
+    // Group by Category
+    const qtyByCategory: Record<string, number> = {};
+    const revenueByCategory: Record<string, number> = {};
+
+    orders.forEach(o => {
+      totalRevenue += Number(o.total);
+      
+      const dateStr = new Date(o.created_at).toLocaleDateString("pt-BR", { day: '2-digit', month: '2-digit' });
+      ordersByDate[dateStr] = (ordersByDate[dateStr] || 0) + 1;
+      revenueByDate[dateStr] = (revenueByDate[dateStr] || 0) + Number(o.total);
+
+      if (Array.isArray(o.items)) {
+        o.items.forEach((item: any) => {
+          const catId = prodToCat[item.id];
+          const catName = catId && catMap[catId] ? catMap[catId] : "Diversos";
+          
+          qtyByCategory[catName] = (qtyByCategory[catName] || 0) + (item.qty || 1);
+          revenueByCategory[catName] = (revenueByCategory[catName] || 0) + ((item.price || 0) * (item.qty || 1));
+        });
+      }
+    });
+
+    const timelineData = Object.keys(ordersByDate).map(date => ({
+      date,
+      pedidos: ordersByDate[date],
+      faturamento: revenueByDate[date],
+    }));
+
+    const pieQtyData = Object.keys(qtyByCategory).map(name => ({
+      name,
+      value: qtyByCategory[name]
+    })).sort((a,b) => b.value - a.value);
+
+    const pieRevData = Object.keys(revenueByCategory).map(name => ({
+      name,
+      value: revenueByCategory[name]
+    })).sort((a,b) => b.value - a.value);
+
+    return { totalRevenue, totalOrders, newCustomers, timelineData, pieQtyData, pieRevData };
+  }, [orders, customers, categories, products]);
+
+  const COLORS = [profile.primary_color, profile.accent_color, '#FFBB28', '#FF8042', '#00C49F', '#0088FE', '#8884d8'];
+
+  if (loading && orders.length === 0) {
+    return <div className="text-sm text-muted-foreground py-10 text-center">Carregando métricas...</div>;
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-xl font-bold font-display flex items-center gap-2 text-primary">
+          <TrendingUp className="h-5 w-5" /> Visão Geral
+        </h2>
+        <div className="flex items-center gap-1 bg-card rounded-xl p-1 border border-border shadow-sm">
+          {[7, 15, 30, 90].map(d => (
+            <button key={d} onClick={() => setDays(d)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${days === d ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground hover:bg-muted"}`}>
+              {d} dias
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-soft)]">
+          <p className="text-sm font-medium text-muted-foreground mb-1">Faturamento Bruto</p>
+          <h3 className="text-3xl font-extrabold text-primary flex items-end gap-2">
+            <span className="text-xl text-muted-foreground font-semibold">R$</span>
+            {stats.totalRevenue.toFixed(2)}
+          </h3>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-soft)]">
+          <p className="text-sm font-medium text-muted-foreground mb-1">Total de Pedidos</p>
+          <h3 className="text-3xl font-extrabold text-primary">{stats.totalOrders}</h3>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-soft)]">
+          <p className="text-sm font-medium text-muted-foreground mb-1">Novos Clientes</p>
+          <h3 className="text-3xl font-extrabold text-primary">{stats.newCustomers}</h3>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-card)]">
+          <h3 className="font-display font-bold text-base mb-6">Pedidos por dia</h3>
+          {stats.timelineData.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">Sem dados no período.</div>
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={stats.timelineData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
+                  <XAxis dataKey="date" tick={{fontSize: 12}} tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tick={{fontSize: 12}} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                  <Line type="monotone" dataKey="pedidos" name="Pedidos" stroke={profile.accent_color} strokeWidth={3} dot={{r:4}} activeDot={{r:6}} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-card)]">
+          <h3 className="font-display font-bold text-base mb-6">Faturamento por Categoria (R$)</h3>
+          {stats.pieRevData.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">Sem dados no período.</div>
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.pieRevData} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="currentColor" className="opacity-10" />
+                  <XAxis type="number" tick={{fontSize: 12}} tickLine={false} axisLine={false} />
+                  <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 12}} tickLine={false} axisLine={false} />
+                  <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                  <Bar dataKey="value" name="Faturamento" radius={[0, 4, 4, 0]}>
+                    {stats.pieRevData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-[var(--shadow-card)] lg:col-span-2">
+          <h3 className="font-display font-bold text-base mb-6">Itens Vendidos por Categoria</h3>
+          {stats.pieQtyData.length === 0 ? (
+            <div className="h-72 flex items-center justify-center text-sm text-muted-foreground">Sem dados no período.</div>
+          ) : (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={stats.pieQtyData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value" label={({name, percent}) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                    {stats.pieQtyData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
