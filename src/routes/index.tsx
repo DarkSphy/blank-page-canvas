@@ -310,18 +310,18 @@ function HowItWorks() {
   const steps = [
     {
       icon: Settings,
-      title: "Montamos pra você",
-      desc: "Você envia seus produtos e a gente deixa tudo pronto.",
+      title: "Montamos a sua loja",
+      desc: "Você não precisa se preocupar com a parte técnica. Nossa equipe monta tudo e deixa sua vitrine pronta para vender.",
     },
     {
       icon: Share2,
-      title: "Compartilhe o link",
-      desc: "Envie o seu catálogo para os clientes no WhatsApp.",
+      title: "Use o link onde quiser",
+      desc: "Coloque seu catálogo no WhatsApp, bio do Instagram, Facebook ou até mesmo em campanhas de anúncios patrocinados.",
     },
     {
       icon: MessageCircle,
-      title: "Receba pedidos",
-      desc: "Os clientes escolhem e pedem direto no WhatsApp.",
+      title: "Receba pedidos completos",
+      desc: "O cliente escolhe os produtos e o pedido chega no seu WhatsApp com valor, quantidade e todas as informações para entrega.",
     },
   ];
   return (
