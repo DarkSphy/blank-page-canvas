@@ -128,6 +128,17 @@ function StorePage() {
   const total = cart.reduce((sum, i) => sum + (i.product.promo_price ?? i.product.price) * i.qty, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
+  const categoriesWithProducts = useMemo(() => {
+    return categories.map(cat => ({
+      ...cat,
+      products: filtered.filter(p => p.category_id === cat.id)
+    })).filter(cat => cat.products.length > 0);
+  }, [categories, filtered]);
+
+  const uncategorizedProducts = useMemo(() => {
+    return filtered.filter(p => !p.category_id);
+  }, [filtered]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Carregando catálogo...</p></div>;
   if (notFoundError || !store) return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 text-center">
@@ -140,17 +151,6 @@ function StorePage() {
   const bannersTopo = banners.filter((b) => b.position === "topo");
   const bannersMeio = banners.filter((b) => b.position === "meio");
   const bannersFinal = banners.filter((b) => b.position === "final");
-
-  const categoriesWithProducts = useMemo(() => {
-    return categories.map(cat => ({
-      ...cat,
-      products: filtered.filter(p => p.category_id === cat.id)
-    })).filter(cat => cat.products.length > 0);
-  }, [categories, filtered]);
-
-  const uncategorizedProducts = useMemo(() => {
-    return filtered.filter(p => !p.category_id);
-  }, [filtered]);
 
   return (
     <div className="min-h-screen bg-secondary/40 pb-32">
