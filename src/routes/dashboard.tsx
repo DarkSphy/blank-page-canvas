@@ -228,8 +228,8 @@ function StoreTab({ profile, onUpdate }: { profile: Profile; onUpdate: (p: Profi
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-2 space-y-6">
+    <div className="max-w-3xl">
+      <div className="space-y-6">
         <div className="rounded-2xl border border-accent/30 bg-accent/5 p-6 shadow-[var(--shadow-card)]">
           <div className="flex items-center gap-2 mb-3">
             <ExternalLink className="h-5 w-5 text-accent" />
@@ -318,25 +318,6 @@ function StoreTab({ profile, onUpdate }: { profile: Profile; onUpdate: (p: Profi
               {saving ? "Salvando..." : "Salvar alterações"}
             </button>
           </form>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)] h-fit">
-        <h3 className="font-display text-base font-bold mb-3">Pré-visualização</h3>
-        <div className="rounded-2xl overflow-hidden border border-border">
-          <div className="p-4 flex items-center gap-3" style={{ backgroundColor: primary, color: "white" }}>
-            {logoUrl ? <img src={logoUrl} alt="" className="h-12 w-12 rounded-full bg-white object-contain p-1" /> : <div className="h-12 w-12 rounded-full bg-white/20" />}
-            <div className="min-w-0">
-              <p className="font-display font-bold truncate">{storeName || "Sua loja"}</p>
-              {bio && <p className="text-xs opacity-90 line-clamp-1">{bio}</p>}
-              {address && <p className="text-[10px] opacity-80 line-clamp-1">{address}</p>}
-            </div>
-          </div>
-          <div className="p-4 bg-background">
-            <button className="w-full h-10 rounded-full font-semibold text-sm text-white" style={{ backgroundColor: accent }} type="button">
-              Botão de destaque
-            </button>
-          </div>
         </div>
       </div>
     </div>

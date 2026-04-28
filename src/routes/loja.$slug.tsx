@@ -152,11 +152,11 @@ function StorePage() {
               <div className="h-14 w-14 rounded-full bg-white/20 shrink-0 flex items-center justify-center font-bold text-xl">{store.store_name[0]}</div>
             )}
             <div className="min-w-0">
-              <h1 className="font-display text-lg sm:text-xl font-bold truncate">{store.store_name}</h1>
-              {store.bio && <p className="text-xs opacity-90 line-clamp-1">{store.bio}</p>}
+              <h1 className="font-display text-lg sm:text-xl font-bold">{store.store_name}</h1>
+              {store.bio && <p className="text-xs opacity-90 leading-snug mt-0.5">{store.bio}</p>}
               {store.address && (
-                <p className="text-[11px] opacity-80 line-clamp-1 flex items-center gap-1">
-                  <MapPin className="h-3 w-3 shrink-0" /> {store.address}
+                <p className="text-[11px] opacity-80 leading-snug mt-1 flex items-start gap-1">
+                  <MapPin className="h-3 w-3 shrink-0 mt-0.5" /> <span>{store.address}</span>
                 </p>
               )}
             </div>
