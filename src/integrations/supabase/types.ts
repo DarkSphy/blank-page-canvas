@@ -49,6 +49,7 @@ export type Database = {
           created_at: string
           icon: string | null
           id: string
+          image_url: string | null
           name: string
           sort_order: number
           store_id: string
@@ -58,6 +59,7 @@ export type Database = {
           created_at?: string
           icon?: string | null
           id?: string
+          image_url?: string | null
           name: string
           sort_order?: number
           store_id: string
@@ -67,6 +69,7 @@ export type Database = {
           created_at?: string
           icon?: string | null
           id?: string
+          image_url?: string | null
           name?: string
           sort_order?: number
           store_id?: string
