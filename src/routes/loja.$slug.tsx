@@ -141,6 +141,17 @@ function StorePage() {
   const bannersMeio = banners.filter((b) => b.position === "meio");
   const bannersFinal = banners.filter((b) => b.position === "final");
 
+  const categoriesWithProducts = useMemo(() => {
+    return categories.map(cat => ({
+      ...cat,
+      products: filtered.filter(p => p.category_id === cat.id)
+    })).filter(cat => cat.products.length > 0);
+  }, [categories, filtered]);
+
+  const uncategorizedProducts = useMemo(() => {
+    return filtered.filter(p => !p.category_id);
+  }, [filtered]);
+
   return (
     <div className="min-h-screen bg-secondary/40 pb-32">
       <header className="sticky top-0 z-30 shadow-md" style={{ backgroundColor: primary, color: "white" }}>
@@ -236,38 +247,53 @@ function StorePage() {
         </section>
       )}
 
-      {/* Products grid */}
-      <main className="mx-auto max-w-5xl px-4 mt-6">
-        <h2 className="font-display text-lg font-bold mb-3">Todos os produtos</h2>
+      {/* Products grid by Category */}
+      <main className="mx-auto max-w-5xl px-4 mt-8">
         {filtered.length === 0 ? (
           <div className="rounded-2xl bg-card p-10 text-center border border-dashed border-border">
-            <p className="text-muted-foreground">Nenhum produto encontrado.</p>
+            <p className="text-muted-foreground">Nenhum produto encontrado com esses filtros.</p>
           </div>
         ) : (
-          <>
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-              {filtered.slice(0, Math.ceil(filtered.length / 2)).map((p) => (
-                <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
-              ))}
-            </div>
+          <div className="space-y-10">
+            {categoriesWithProducts.map((cat, index) => (
+              <div key={cat.id}>
+                <h2 id={`cat-${cat.id}`} className="font-display text-xl font-bold mb-4">{cat.name}</h2>
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {cat.products.map((p) => (
+                    <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
+                  ))}
+                </div>
+                
+                {/* Insert middle banners right after the first category */}
+                {index === 0 && bannersMeio.length > 0 && (
+                  <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                    {bannersMeio.map((b) => (
+                      <img key={b.id} src={b.image_url} alt="" className="w-full h-40 object-cover rounded-2xl shadow-sm" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
 
-            {/* Banners meio */}
-            {bannersMeio.length > 0 && (
-              <div className="my-6 grid gap-4 sm:grid-cols-2">
-                {bannersMeio.map((b) => (
-                  <img key={b.id} src={b.image_url} alt="" className="w-full h-40 object-cover rounded-2xl" />
-                ))}
+            {uncategorizedProducts.length > 0 && (
+              <div>
+                <h2 className="font-display text-xl font-bold mb-4">{categoriesWithProducts.length > 0 ? "Outros produtos" : "Todos os produtos"}</h2>
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {uncategorizedProducts.map((p) => (
+                    <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
+                  ))}
+                </div>
+                {/* Fallback for middle banners if there are no main categories */}
+                {categoriesWithProducts.length === 0 && bannersMeio.length > 0 && (
+                  <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                    {bannersMeio.map((b) => (
+                      <img key={b.id} src={b.image_url} alt="" className="w-full h-40 object-cover rounded-2xl shadow-sm" />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-
-            {filtered.length > 1 && (
-              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 mt-4">
-                {filtered.slice(Math.ceil(filtered.length / 2)).map((p) => (
-                  <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
-                ))}
-              </div>
-            )}
-          </>
+          </div>
         )}
       </main>
 
