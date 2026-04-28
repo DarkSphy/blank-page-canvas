@@ -85,6 +85,7 @@ function Header() {
             <>
               <Link
                 to="/auth"
+                search={{ mode: "login" }}
                 className="hidden sm:inline-flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted"
               >
                 <LogIn className="h-4 w-4" /> Entrar

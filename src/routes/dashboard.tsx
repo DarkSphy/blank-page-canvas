@@ -31,7 +31,7 @@ type Profile = {
   bio: string | null;
 };
 
-type Category = { id: string; name: string; sort_order: number; icon: string | null };
+type Category = { id: string; name: string; sort_order: number; icon: string | null; image_url: string | null };
 
 type Product = {
   id: string;
@@ -344,32 +344,54 @@ function StoreTab({ profile, onUpdate }: { profile: Profile; onUpdate: (p: Profi
 }
 
 /* ==================== CATEGORIAS TAB ==================== */
-const CATEGORY_ICONS = ["🥣", "🦴", "🎾", "💊", "🛁", "🐕", "🐈", "🪥"];
-
 function CategoriesTab({ userId }: { userId: string }) {
   const [items, setItems] = useState<Category[]>([]);
   const [name, setName] = useState("");
-  const [icon, setIcon] = useState<string>("🥣");
+  const [icon, setIcon] = useState<string>("");
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [editingIcon, setEditingIcon] = useState<string>("🥣");
+  const [editingIcon, setEditingIcon] = useState<string>("");
+  const [editingImage, setEditingImage] = useState<string>("");
+  const [editingUploading, setEditingUploading] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("categories").select("id, name, sort_order, icon")
+    const { data } = await supabase.from("categories").select("id, name, sort_order, icon, image_url")
       .eq("store_id", userId).order("sort_order").order("name");
     setItems((data ?? []) as Category[]);
     setLoading(false);
   };
   useEffect(() => { load(); }, [userId]);
 
+  const uploadImage = async (file: File, setUrl: (u: string) => void, setBusy: (b: boolean) => void) => {
+    if (!file.type.startsWith("image/")) return toast.error("Selecione uma imagem");
+    if (file.size > 2 * 1024 * 1024) return toast.error("Imagem deve ter até 2MB");
+    setBusy(true);
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${userId}/categories/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+    if (error) { setBusy(false); return toast.error(error.message); }
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    setUrl(data.publicUrl);
+    setBusy(false);
+  };
+
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    const { error } = await supabase.from("categories").insert({ name: name.trim(), icon, store_id: userId, sort_order: items.length });
+    const { error } = await supabase.from("categories").insert({
+      name: name.trim(),
+      icon: icon.trim() || null,
+      image_url: imageUrl || null,
+      store_id: userId,
+      sort_order: items.length,
+    });
     if (error) return toast.error(error.message);
-    setName(""); toast.success("Categoria adicionada"); load();
+    setName(""); setIcon(""); setImageUrl("");
+    toast.success("Categoria adicionada"); load();
   };
 
   const remove = async (id: string) => {
@@ -380,7 +402,11 @@ function CategoriesTab({ userId }: { userId: string }) {
   };
 
   const saveEdit = async (id: string) => {
-    const { error } = await supabase.from("categories").update({ name: editingName.trim(), icon: editingIcon }).eq("id", id);
+    const { error } = await supabase.from("categories").update({
+      name: editingName.trim(),
+      icon: editingIcon.trim() || null,
+      image_url: editingImage || null,
+    }).eq("id", id);
     if (error) return toast.error(error.message);
     setEditingId(null); load();
   };
@@ -395,15 +421,37 @@ function CategoriesTab({ userId }: { userId: string }) {
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} maxLength={50}
             placeholder="Ex.: Ração, Petisco, Acessório"
             className="w-full h-11 rounded-xl border border-input bg-background px-4 text-sm" />
+
           <div>
-            <label className="block text-xs font-medium mb-2 text-muted-foreground">Ícone</label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_ICONS.map((em) => (
-                <button key={em} type="button" onClick={() => setIcon(em)}
-                  className={`h-10 w-10 rounded-xl border text-lg ${icon === em ? "border-accent bg-accent/10" : "border-border bg-background"}`}>{em}</button>
-              ))}
+            <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Emoji (opcional)</label>
+            <input type="text" value={icon} onChange={(e) => setIcon(e.target.value)} maxLength={4}
+              placeholder="Ex.: 🐶  🥣  🦴"
+              className="w-full h-11 rounded-xl border border-input bg-background px-4 text-lg" />
+            <p className="mt-1 text-[11px] text-muted-foreground">Use o teclado de emojis do seu sistema (no celular toque no emoji 😀 do teclado).</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5 text-muted-foreground">Imagem pequena (opcional)</label>
+            <div className="flex items-center gap-3">
+              {imageUrl ? (
+                <div className="relative">
+                  <img src={imageUrl} alt="" className="h-12 w-12 rounded-xl object-cover border border-border bg-white" />
+                  <button type="button" onClick={() => setImageUrl("")}
+                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <label className={`h-12 w-12 rounded-xl border-2 border-dashed border-border bg-background flex items-center justify-center cursor-pointer hover:border-accent ${uploading ? "opacity-60" : ""}`}>
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <input type="file" accept="image/*" className="hidden" disabled={uploading}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f, setImageUrl, setUploading); }} />
+                </label>
+              )}
+              <p className="text-[11px] text-muted-foreground flex-1">Recomendado quadrado, até 2MB. Será exibido em tamanho pequeno.</p>
             </div>
           </div>
+
           <button type="submit" className="w-full h-11 rounded-full bg-accent text-sm font-semibold text-accent-foreground hover:brightness-105">Adicionar</button>
         </form>
       </div>
@@ -416,24 +464,45 @@ function CategoriesTab({ userId }: { userId: string }) {
               {items.map((c) => (
                 <li key={c.id} className="flex items-center justify-between py-3 gap-3">
                   {editingId === c.id ? (
-                    <>
-                      <div className="flex items-center gap-2 flex-1">
-                        <select value={editingIcon} onChange={(e) => setEditingIcon(e.target.value)} className="h-9 rounded-lg border border-input bg-background px-2 text-lg">
-                          {CATEGORY_ICONS.map((em) => <option key={em} value={em}>{em}</option>)}
-                        </select>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {editingImage ? (
+                          <div className="relative shrink-0">
+                            <img src={editingImage} alt="" className="h-10 w-10 rounded-lg object-cover border border-border bg-white" />
+                            <button type="button" onClick={() => setEditingImage("")}
+                              className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                              <X className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className={`h-10 w-10 shrink-0 rounded-lg border-2 border-dashed border-border bg-background flex items-center justify-center cursor-pointer hover:border-accent ${editingUploading ? "opacity-60" : ""}`}>
+                            <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                            <input type="file" accept="image/*" className="hidden" disabled={editingUploading}
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f, setEditingImage, setEditingUploading); }} />
+                          </label>
+                        )}
+                        <input value={editingIcon} onChange={(e) => setEditingIcon(e.target.value)} maxLength={4}
+                          placeholder="emoji" className="w-20 h-9 rounded-lg border border-input bg-background px-2 text-lg" />
                         <input autoFocus value={editingName} onChange={(e) => setEditingName(e.target.value)}
                           className="flex-1 h-9 rounded-lg border border-input bg-background px-3 text-sm" />
                       </div>
-                      <button onClick={() => saveEdit(c.id)} className="text-sm font-semibold text-accent hover:underline">Salvar</button>
-                      <button onClick={() => setEditingId(null)} className="text-sm text-muted-foreground hover:underline">Cancelar</button>
-                    </>
+                      <div className="flex gap-3 justify-end">
+                        <button onClick={() => saveEdit(c.id)} className="text-sm font-semibold text-accent hover:underline">Salvar</button>
+                        <button onClick={() => setEditingId(null)} className="text-sm text-muted-foreground hover:underline">Cancelar</button>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <span className="text-sm font-medium flex items-center gap-2">
-                        <span className="text-lg">{c.icon || "🐾"}</span>{c.name}
+                        {c.image_url ? (
+                          <img src={c.image_url} alt="" className="h-8 w-8 rounded-lg object-cover border border-border bg-white" />
+                        ) : c.icon ? (
+                          <span className="text-lg">{c.icon}</span>
+                        ) : null}
+                        {c.name}
                       </span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => { setEditingId(c.id); setEditingName(c.name); setEditingIcon(c.icon || "🥣"); }}
+                        <button onClick={() => { setEditingId(c.id); setEditingName(c.name); setEditingIcon(c.icon || ""); setEditingImage(c.image_url || ""); }}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted">
                           <Pencil className="h-4 w-4 text-muted-foreground" />
                         </button>
@@ -463,7 +532,7 @@ function ProductsTab({ userId }: { userId: string }) {
     setLoading(true);
     const [{ data: prods }, { data: cats }] = await Promise.all([
       supabase.from("products").select("*").eq("store_id", userId).order("created_at", { ascending: false }),
-      supabase.from("categories").select("id, name, sort_order, icon").eq("store_id", userId).order("name"),
+      supabase.from("categories").select("id, name, sort_order, icon, image_url").eq("store_id", userId).order("name"),
     ]);
     setProducts((prods ?? []) as Product[]);
     setCategories((cats ?? []) as Category[]);
