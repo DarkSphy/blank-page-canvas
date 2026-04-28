@@ -46,7 +46,7 @@ type Product = {
   is_featured: boolean;
 };
 
-type Category = { id: string; name: string; icon: string | null };
+type Category = { id: string; name: string; icon: string | null; image_url: string | null };
 type Banner = { id: string; image_url: string; position: string; sort_order: number };
 type CartItem = { product: Product; qty: number };
 
@@ -88,7 +88,7 @@ function StorePage() {
         supabase.from("products")
           .select("id, name, description, price, promo_price, old_price, image_url, images, available, category_id, type_pet, pet_stage, pet_size, is_featured")
           .eq("store_id", s.id).eq("available", true).order("created_at", { ascending: false }),
-        supabase.from("categories").select("id, name, icon").eq("store_id", s.id).order("sort_order"),
+        supabase.from("categories").select("id, name, icon, image_url").eq("store_id", s.id).order("sort_order"),
         supabase.from("banners").select("*").eq("store_id", s.id).order("sort_order"),
       ]);
       setProducts((prods ?? []) as Product[]);
@@ -211,7 +211,12 @@ function StorePage() {
           <CatChip active={activeCat === "all"} onClick={() => setActiveCat("all")} color={primary}>Todos</CatChip>
           {categories.map((c) => (
             <CatChip key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)} color={primary}>
-              {c.icon ? `${c.icon} ` : ""}{c.name}
+              {c.image_url ? (
+                <img src={c.image_url} alt="" className="h-5 w-5 rounded object-cover bg-white inline-block mr-1.5 align-middle" />
+              ) : c.icon ? (
+                <span className="mr-1">{c.icon}</span>
+              ) : null}
+              {c.name}
             </CatChip>
           ))}
         </div>
