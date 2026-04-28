@@ -114,7 +114,7 @@ function Hero() {
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 md:grid-cols-2 md:py-20">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-accent">
-            <Sparkles className="h-3.5 w-3.5" /> 7 dias grátis com setup incluso
+            <Sparkles className="h-3.5 w-3.5" /> Comece a vender online
           </span>
           <h1 className="mt-4 font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-primary md:text-6xl">
             Seu catálogo digital com pedidos direto no{" "}
@@ -128,7 +128,7 @@ function Hero() {
               to="/auth"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-7 text-base font-semibold text-accent-foreground shadow-[var(--shadow-glow)] transition hover:brightness-105"
             >
-              Começar agora — 7 dias grátis
+              Começar agora
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
@@ -139,7 +139,7 @@ function Hero() {
             </a>
           </div>
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            {["Sem cartão", "Setup incluso", "Cancela quando quiser"].map((t) => (
+            {["Rápido e fácil", "Opção com ou sem setup", "Cancela quando quiser"].map((t) => (
               <span key={t} className="inline-flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-success" />
                 {t}
@@ -417,40 +417,47 @@ function Differentiator() {
 }
 
 function Pricing() {
-  const features = [
+  const featuresBase = [
     "Acesso completo ao sistema",
     "Catálogo com a sua marca",
     "Atualização ilimitada de produtos",
-    "Suporte 24 horas",
+    "Suporte via WhatsApp",
   ];
+
+  const featuresSetup = [
+    "Criação do seu catálogo com sua marca",
+    "Organização dos seus produtos (ração, petiscos, etc.)",
+    "Configuração de banners e promoções",
+    "Ajuste visual (cores, logo e identidade da loja)",
+    "Catálogo pronto para você começar a vender",
+  ];
+
   return (
     <section id="preco" className="py-24">
       <div className="mx-auto max-w-6xl px-4">
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <h2 className="font-display text-3xl font-bold text-primary md:text-4xl">Preço simples e justo</h2>
-          <p className="mt-4 text-muted-foreground">Um único plano. Sem surpresa, sem taxa por pedido.</p>
+          <h2 className="font-display text-3xl font-bold text-primary md:text-4xl">Planos simples e justos</h2>
+          <p className="mt-4 text-muted-foreground">Escolha se quer fazer você mesmo ou quer tudo pronto para vender.</p>
         </div>
-        <div className="mx-auto max-w-md">
-          <div className="relative overflow-hidden rounded-3xl border-2 border-accent/40 bg-card p-8 shadow-[var(--shadow-glow)]">
-            <div
-              className="absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-30 blur-3xl"
-              style={{ background: "var(--gradient-accent)" }}
-            />
+        <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-2">
+          
+          {/* Plano Básico */}
+          <div className="relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-3 w-3 rounded-full bg-success" />
-              <p className="text-sm font-bold uppercase tracking-wide text-success">Plano Catálogo Pet</p>
+              <span className="inline-flex h-3 w-3 rounded-full bg-muted-foreground" />
+              <p className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Plano Básico</p>
             </div>
             <div className="mt-6 flex items-baseline gap-1">
               <span className="font-display text-5xl font-extrabold text-primary">R$ 39,90</span>
               <span className="text-base font-medium text-muted-foreground">/mês</span>
             </div>
-            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-              <Gift className="h-3.5 w-3.5" /> 7 dias grátis com setup incluso
-            </div>
-            <ul className="mt-6 space-y-3">
-              {features.map((f) => (
-                <li key={f} className="flex items-center gap-3 text-sm text-foreground">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/15 text-success">
+            <p className="mt-3 text-sm text-muted-foreground">
+              Você mesmo configura sua loja e cadastra seus produtos.
+            </p>
+            <ul className="mt-6 mb-8 flex-1 space-y-3">
+              {featuresBase.map((f) => (
+                <li key={f} className="flex items-start gap-3 text-sm text-foreground">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
                     <Check className="h-3 w-3" />
                   </span>
                   {f}
@@ -459,15 +466,55 @@ function Pricing() {
             </ul>
             <Link
               to="/auth"
-              className="mt-8 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-glow)] transition hover:brightness-105"
+              className="mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-accent text-base font-semibold text-accent transition hover:bg-accent/5"
             >
-              Começar 7 dias grátis
+              Assinar Plano Básico
+            </Link>
+          </div>
+
+          {/* Plano Completo (Setup) */}
+          <div className="relative flex flex-col overflow-hidden rounded-3xl border-2 border-accent/40 bg-card p-8 shadow-[var(--shadow-glow)]">
+            <div
+              className="absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-30 blur-3xl"
+              style={{ background: "var(--gradient-accent)" }}
+            />
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-3 w-3 rounded-full bg-success" />
+              <p className="text-sm font-bold uppercase tracking-wide text-success">Plano Completo (+ Setup)</p>
+            </div>
+            <div className="mt-6 flex items-baseline gap-1">
+              <span className="font-display text-5xl font-extrabold text-primary">R$ 150</span>
+              <span className="text-base font-medium text-muted-foreground">no 1º mês</span>
+            </div>
+            <p className="mt-3 text-sm font-bold text-primary">
+              Depois apenas R$ 39,90/mês.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Nós montamos tudo pra você. Sua loja entregue pronta para vender.
+            </p>
+            
+            <div className="mt-6 mb-8 flex-1">
+              <p className="text-sm font-bold mb-3">O que está incluso no setup:</p>
+              <ul className="space-y-3">
+                {featuresSetup.map((f) => (
+                  <li key={f} className="flex items-start gap-3 text-sm text-foreground">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
+                      <Check className="h-3 w-3" />
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link
+              to="/auth"
+              className="mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-glow)] transition hover:brightness-105"
+            >
+              Quero tudo pronto
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              A gente monta tudo pra você. Você só precisa começar a usar.
-            </p>
           </div>
+
         </div>
       </div>
     </section>
@@ -477,12 +524,12 @@ function Pricing() {
 function FAQ() {
   const faqs = [
     {
-      q: "Como funciona o teste grátis?",
-      a: "Você tem 7 dias para usar o sistema completo, sem custo. A gente ainda monta seu catálogo pra você no setup incluso. Sem cartão de crédito para começar.",
+      q: "Como funcionam os planos?",
+      a: "Temos o Plano Básico por R$ 39,90/mês onde você mesmo cadastra seus produtos, e o Plano Completo, onde você paga R$ 150 no primeiro mês e nós entregamos a loja toda montada para você. Nos meses seguintes, o valor passa a ser os mesmos R$ 39,90.",
     },
     {
       q: "Eu preciso saber mexer em computador?",
-      a: "Não. O sistema é simples e pensado para uso no balcão, no celular. Além disso, fazemos o setup inicial pra você — é só começar a usar.",
+      a: "Não. O sistema é simples e pensado para uso no celular. E se escolher o Plano Completo, nós fazemos toda a configuração inicial pra você — é só começar a vender.",
     },
     {
       q: "Como o cliente faz o pedido?",
@@ -494,7 +541,7 @@ function FAQ() {
     },
     {
       q: "Tem taxa por pedido?",
-      a: "Não. Você paga apenas a mensalidade fixa de R$ 39,90 e recebe pedidos ilimitados.",
+      a: "Não cobramos comissão! Você paga apenas a mensalidade do sistema e recebe pedidos ilimitados direto no seu WhatsApp.",
     },
     {
       q: "Funciona no celular?",
