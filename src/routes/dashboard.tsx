@@ -532,7 +532,7 @@ function ProductsTab({ userId }: { userId: string }) {
     setLoading(true);
     const [{ data: prods }, { data: cats }] = await Promise.all([
       supabase.from("products").select("*").eq("store_id", userId).order("created_at", { ascending: false }),
-      supabase.from("categories").select("id, name, sort_order, icon").eq("store_id", userId).order("name"),
+      supabase.from("categories").select("id, name, sort_order, icon, image_url").eq("store_id", userId).order("name"),
     ]);
     setProducts((prods ?? []) as Product[]);
     setCategories((cats ?? []) as Category[]);
