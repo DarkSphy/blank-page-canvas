@@ -31,7 +31,7 @@ type Profile = {
   bio: string | null;
 };
 
-type Category = { id: string; name: string; sort_order: number; icon: string | null };
+type Category = { id: string; name: string; sort_order: number; icon: string | null; image_url: string | null };
 
 type Product = {
   id: string;
