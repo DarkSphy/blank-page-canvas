@@ -225,7 +225,7 @@ function StorePage() {
           </h2>
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {featured.map((p) => (
-              <ProductCard key={`f-${p.id}`} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} />
+              <ProductCard key={`f-${p.id}`} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
             ))}
           </div>
         </section>
@@ -242,7 +242,7 @@ function StorePage() {
           <>
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
               {filtered.slice(0, Math.ceil(filtered.length / 2)).map((p) => (
-                <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} />
+                <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
               ))}
             </div>
 
@@ -258,7 +258,7 @@ function StorePage() {
             {filtered.length > 1 && (
               <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 mt-4">
                 {filtered.slice(Math.ceil(filtered.length / 2)).map((p) => (
-                  <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} />
+                  <ProductCard key={p.id} p={p} primary={primary} accent={accent} cart={cart} onAdd={addToCart} onOpen={setSelectedProduct} />
                 ))}
               </div>
             )}
