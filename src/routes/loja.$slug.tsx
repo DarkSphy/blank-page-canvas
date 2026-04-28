@@ -85,7 +85,7 @@ function StorePage() {
       setStore(s as Store);
       const [{ data: prods }, { data: cats }, { data: bs }] = await Promise.all([
         supabase.from("products")
-          .select("id, name, description, price, promo_price, old_price, image_url, available, category_id, type_pet, pet_stage, pet_size, is_featured")
+          .select("id, name, description, price, promo_price, old_price, image_url, images, available, category_id, type_pet, pet_stage, pet_size, is_featured")
           .eq("store_id", s.id).eq("available", true).order("created_at", { ascending: false }),
         supabase.from("categories").select("id, name, icon").eq("store_id", s.id).order("sort_order"),
         supabase.from("banners").select("*").eq("store_id", s.id).order("sort_order"),
