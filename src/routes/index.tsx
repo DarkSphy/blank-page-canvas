@@ -431,7 +431,7 @@ function Pricing() {
     "Organização dos seus produtos (ração, petiscos, etc.)",
     "Configuração de banners e promoções",
     "Ajuste visual (cores, logo e identidade da loja)",
-    "Catálogo pronto para você começar a vender",
+    "Pronto para você começar a vender no mesmo dia",
   ];
 
   return (
@@ -454,7 +454,7 @@ function Pricing() {
               <span className="text-base font-medium text-muted-foreground">/mês</span>
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
-              Você mesmo configura sua loja e cadastra seus produtos.
+              Ideal para quem tem tempo e prefere configurar sozinho.
             </p>
             <ul className="mt-6 mb-8 flex-1 space-y-3">
               {featuresBase.map((f) => (
@@ -477,7 +477,7 @@ function Pricing() {
           {/* Plano Completo (Setup) */}
           <div className="relative flex flex-col overflow-hidden rounded-3xl border-2 border-accent/40 bg-card p-8 shadow-[var(--shadow-glow)]">
             <div className="absolute top-0 right-0 rounded-bl-2xl bg-accent px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-accent-foreground shadow-sm">
-              Mais escolhido
+              Mais escolhido pelos clientes
             </div>
             <div
               className="absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-30 blur-3xl"
@@ -497,6 +497,9 @@ function Pricing() {
             <p className="mt-1 text-sm text-muted-foreground">
               Nós montamos tudo pra você. Sua loja entregue pronta para vender.
             </p>
+            <p className="mt-3 rounded-lg bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent">
+              Você não precisa mexer com nada. A gente deixa tudo pronto.
+            </p>
             
             <div className="mt-6 mb-8 flex-1">
               <p className="text-sm font-bold mb-3">O que está incluso no setup:</p>
@@ -510,12 +513,15 @@ function Pricing() {
                   </li>
                 ))}
               </ul>
+              <p className="mt-5 text-xs font-medium text-muted-foreground flex items-start gap-1.5 border-t border-border/50 pt-4">
+                <span className="text-accent">*</span> Setup inicial inclui até 20 produtos para organização rápida.
+              </p>
             </div>
             <Link
               to="/auth"
               className="mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-glow)] transition hover:brightness-105"
             >
-              Quero tudo pronto
+              Quero meu catálogo pronto
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
