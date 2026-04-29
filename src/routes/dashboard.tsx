@@ -1289,8 +1289,11 @@ function OrdersTab({ userId }: { userId: string }) {
 
   const removeOrder = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este pedido permanentemente?")) return;
-    const { error } = await supabase.from("orders").delete().eq("id", id);
+    const { data, error } = await supabase.from("orders").delete().eq("id", id).select();
     if (error) return toast.error(error.message);
+    if (!data || data.length === 0) {
+      return toast.error("Não foi possível excluir. Parece que a permissão de deletar (RLS) não foi aplicada no Supabase.");
+    }
     toast.success("Pedido excluído com sucesso");
     load();
   };
