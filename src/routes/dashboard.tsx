@@ -7,6 +7,7 @@ import {
   LogOut, Store, Package, Tag, Copy, ExternalLink, Upload, Plus, Trash2,
   Pencil, X, Image as ImageIcon, Users, Layout, MessageCircle, Star,
   BarChart3, Calendar, TrendingUp, PieChart as PieChartIcon,
+  ShoppingCart, Search,
 } from "lucide-react";
 import logo from "@/assets/logo-catalogopet.png";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -82,7 +83,7 @@ type Order = {
   created_at: string;
 };
 
-type TabKey = "visao_geral" | "loja" | "categorias" | "produtos" | "banners" | "clientes";
+type TabKey = "visao_geral" | "loja" | "categorias" | "produtos" | "banners" | "clientes" | "pedidos";
 
 function Dashboard() {
   const { user, loading, signOut } = useAuth();
@@ -145,6 +146,7 @@ function Dashboard() {
           <TabBtn active={tab === "produtos"} onClick={() => setTab("produtos")} icon={Package} label="Produtos" />
           <TabBtn active={tab === "banners"} onClick={() => setTab("banners")} icon={Layout} label="Banners" />
           <TabBtn active={tab === "clientes"} onClick={() => setTab("clientes")} icon={Users} label="Clientes" />
+          <TabBtn active={tab === "pedidos"} onClick={() => setTab("pedidos")} icon={ShoppingCart} label="Pedidos" />
         </div>
 
         {tab === "visao_geral" && profile && <OverviewTab userId={user.id} profile={profile} />}
@@ -153,6 +155,7 @@ function Dashboard() {
         {tab === "produtos" && <ProductsTab userId={user.id} />}
         {tab === "banners" && <BannersTab userId={user.id} />}
         {tab === "clientes" && <CustomersTab userId={user.id} />}
+        {tab === "pedidos" && <OrdersTab userId={user.id} />}
       </main>
     </div>
   );
@@ -1152,6 +1155,7 @@ function CustomersTab({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editingTag, setEditingTag] = useState("");
+  const [search, setSearch] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -1191,16 +1195,29 @@ function CustomersTab({ userId }: { userId: string }) {
     setEditingTagId(null); load();
   };
 
+  const filteredCustomers = customers.filter(c => 
+    c.full_name.toLowerCase().includes(search.toLowerCase()) || 
+    c.whatsapp.includes(search)
+  );
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
-        <h3 className="font-display text-lg font-bold mb-4 flex items-center gap-2">
-          <Users className="h-5 w-5 text-primary" /> Seus clientes
-          <span className="ml-auto text-sm font-normal text-muted-foreground">{customers.length} total</span>
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h3 className="font-display text-lg font-bold flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" /> Seus clientes
+            <span className="text-sm font-normal text-muted-foreground ml-2">({customers.length})</span>
+          </h3>
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome ou WhatsApp..."
+              className="w-full h-10 pl-9 pr-4 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+        </div>
 
         {loading ? <p className="text-sm text-muted-foreground">Carregando...</p>
-          : customers.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum cliente ainda. Pedidos feitos no catálogo aparecem aqui.</p>
+          : filteredCustomers.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum cliente encontrado.</p>
           : <div className="overflow-x-auto -mx-2">
               <table className="w-full text-sm">
                 <thead>
@@ -1214,8 +1231,8 @@ function CustomersTab({ userId }: { userId: string }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {customers.map((c) => (
-                    <tr key={c.id} className="border-b border-border last:border-0">
+                  {filteredCustomers.map((c) => (
+                    <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                       <td className="py-3 px-2 font-medium">{c.full_name}</td>
                       <td className="py-3 px-2 text-muted-foreground">{c.whatsapp}</td>
                       <td className="py-3 px-2 hidden md:table-cell text-muted-foreground line-clamp-1 max-w-xs">{c.address || "-"}</td>
@@ -1252,21 +1269,73 @@ function CustomersTab({ userId }: { userId: string }) {
               </table>
             </div>}
       </div>
+    </div>
+  );
+}
 
+/* ==================== PEDIDOS TAB ==================== */
+function OrdersTab({ userId }: { userId: string }) {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("orders").select("*").eq("store_id", userId).order("created_at", { ascending: false });
+    setOrders((data ?? []) as Order[]);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [userId]);
+
+  const removeOrder = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este pedido permanentemente?")) return;
+    const { error } = await supabase.from("orders").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Pedido excluído com sucesso");
+    load();
+  };
+
+  const filteredOrders = orders.filter(o => 
+    o.full_name.toLowerCase().includes(search.toLowerCase()) || 
+    o.whatsapp.includes(search)
+  );
+
+  return (
+    <div className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
-        <h3 className="font-display text-lg font-bold mb-4">Histórico de pedidos</h3>
-        {orders.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum pedido ainda.</p>
-          : <ul className="divide-y divide-border">
-              {orders.slice(0, 20).map((o) => (
-                <li key={o.id} className="py-3 flex items-start justify-between gap-4">
-                  <div className="min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h3 className="font-display text-lg font-bold flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5 text-primary" /> Histórico de Pedidos
+            <span className="text-sm font-normal text-muted-foreground ml-2">({orders.length})</span>
+          </h3>
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por cliente ou WhatsApp..."
+              className="w-full h-10 pl-9 pr-4 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+        </div>
+
+        {loading ? <p className="text-sm text-muted-foreground">Carregando...</p>
+          : filteredOrders.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum pedido encontrado.</p>
+          : <ul className="divide-y divide-border -mx-2 px-2">
+              {filteredOrders.map((o) => (
+                <li key={o.id} className="py-4 flex items-start justify-between gap-4 hover:bg-muted/30 rounded-xl px-2 transition-colors">
+                  <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm">{o.full_name} <span className="text-xs font-normal text-muted-foreground">— {o.whatsapp}</span></p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {Array.isArray(o.items) ? o.items.map((i: any) => `${i.qty}x ${i.name}`).join(", ") : ""}
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{new Date(o.created_at).toLocaleString("pt-BR")}</p>
+                    {o.notes && <p className="text-xs text-muted-foreground mt-1 italic whitespace-pre-line">{o.notes}</p>}
+                    <p className="text-[11px] text-muted-foreground mt-2">{new Date(o.created_at).toLocaleString("pt-BR")}</p>
                   </div>
-                  <span className="font-bold text-sm shrink-0">R$ {Number(o.total).toFixed(2)}</span>
+                  <div className="flex flex-col items-end gap-3 shrink-0">
+                    <span className="font-bold text-sm bg-accent/10 text-accent px-2.5 py-1 rounded-full">R$ {Number(o.total).toFixed(2)}</span>
+                    <button onClick={() => removeOrder(o.id)} title="Excluir pedido"
+                      className="h-8 w-8 inline-flex items-center justify-center rounded-full hover:bg-destructive/10">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>}
