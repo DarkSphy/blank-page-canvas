@@ -681,7 +681,13 @@ function CheckoutModal({ store, cart, total, onClose, onSent }: {
       ].filter(Boolean);
       const msg = encodeURIComponent(lines.join("\n"));
       const phone = store.whatsapp.replace(/\D/g, "");
-      window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+      const url = `https://wa.me/55${phone}?text=${msg}`;
+      if (waWindow && !waWindow.closed) {
+        waWindow.location.href = url;
+      } else {
+        // Fallback: navegar na mesma aba se popup foi bloqueado
+        window.location.href = url;
+      }
     } else {
       toast.message("Pedido registrado. A loja entrará em contato.");
     }
