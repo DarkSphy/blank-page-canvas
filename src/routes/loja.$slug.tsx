@@ -625,6 +625,9 @@ function CheckoutModal({ store, cart, total, onClose, onSent }: {
       toast.error("Preencha nome, WhatsApp e endereço.");
       return;
     }
+    // Abrir janela SINCRONAMENTE para preservar o gesto do usuário
+    // (evita bloqueio de popup após awaits)
+    const waWindow = store.whatsapp ? window.open("about:blank", "_blank") : null;
     setSending(true);
     const items = cart.map((i) => ({
       id: i.product.id, name: i.product.name, qty: i.qty,
